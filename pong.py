@@ -4,7 +4,6 @@ import sys
 pygame.init()
 
 class Config:
-    """Classe responsável por armazenar configurações globais do jogo."""
     LARGURA = 800
     ALTURA = 600
     COR_FUNDO = (0, 0, 0)
@@ -13,17 +12,17 @@ class Config:
 
 
 class Raquete:
+    """Representa uma raquete do jogo"""
 
-    def __init__(self, x, y, largura=10, altura=60, velocidade=5):
-        self.rect = pygame.Rect(x, y, largura, altura)
+    def __init__(self, x, y, velocidade=5):
+        self.rect = pygame.Rect(x, y, 10, 60)
         self.velocidade = velocidade
 
-    def mover_cima(self):
-        if self.rect.top > 0:
+    def mover(self, direcao):
+        """Move a raquete para cima ou baixo"""
+        if direcao == "cima" and self.rect.top > 0:
             self.rect.y -= self.velocidade
-
-    def mover_baixo(self):
-        if self.rect.bottom < Config.ALTURA:
+        elif direcao == "baixo" and self.rect.bottom < Config.ALTURA:
             self.rect.y += self.velocidade
 
     def desenhar(self, tela):
@@ -31,16 +30,11 @@ class Raquete:
 
 
 class Bola:
+    """Representa a bola"""
 
     def __init__(self):
-        self.rect = pygame.Rect(
-            Config.LARGURA // 2,
-            Config.ALTURA // 2,
-            7,
-            7
-        )
-        self.vel_x = 5
-        self.vel_y = 5
+        self.rect = pygame.Rect(0, 0, 7, 7)
+        self.resetar()
 
     def mover(self):
         self.rect.x += self.vel_x
@@ -54,13 +48,15 @@ class Bola:
 
     def resetar(self):
         self.rect.center = (Config.LARGURA // 2, Config.ALTURA // 2)
-        self.inverter_x()
+        self.vel_x = 5
+        self.vel_y = 5
 
     def desenhar(self, tela):
-        pygame.draw.circle(tela, Config.COR_OBJETOS, self.rect.center, self.rect.width)
+        pygame.draw.circle(tela, Config.COR_OBJETOS, self.rect.center, 7)
 
 
 class Game:
+    """Controla o jogo"""
 
     def __init__(self, tela):
         self.tela = tela
@@ -68,7 +64,6 @@ class Game:
         self.reset()
 
     def reset(self):
-        """Inicializa ou reinicia o jogo."""
         self.player1 = Raquete(15, Config.ALTURA // 2 - 30)
         self.player2 = Raquete(Config.LARGURA - 25, Config.ALTURA // 2 - 30)
         self.bola = Bola()
@@ -81,19 +76,21 @@ class Game:
                 pygame.quit()
                 sys.exit()
 
-    def entrada_usuario(self):
+    def mover_jogador(self):
+        """Entrada do usuário separada"""
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_UP]:
-            self.player1.mover_cima()
+            self.player1.mover("cima")
         if keys[pygame.K_DOWN]:
-            self.player1.mover_baixo()
+            self.player1.mover("baixo")
 
     def mover_ia(self):
+        """IA simples"""
         if self.player2.rect.centery < self.bola.rect.centery:
-            self.player2.mover_baixo()
+            self.player2.mover("baixo")
         else:
-            self.player2.mover_cima()
+            self.player2.mover("cima")
 
     def verificar_colisoes(self):
         if self.bola.rect.colliderect(self.player1.rect) or \
@@ -112,15 +109,14 @@ class Game:
             self.score1 += 1
             self.bola.resetar()
 
-        if self.score1 >= 1 or self.score2 >= 1:
-            return True  # volta para o menu
-
-        return False
+        return self.score1 >= 10 or self.score2 >= 10
 
     def atualizar(self):
+        """Agora só coordena"""
         self.bola.mover()
-        self.verificar_colisoes()
+        self.mover_jogador()
         self.mover_ia()
+        self.verificar_colisoes()
         return self.verificar_pontos()
 
     def desenhar(self):
@@ -139,7 +135,6 @@ class Game:
     def rodar(self):
         while True:
             self.tratar_eventos()
-            self.entrada_usuario()
 
             if self.atualizar():
                 return
@@ -149,7 +144,6 @@ class Game:
 
 
 class Menu:
-
     def __init__(self, tela):
         self.tela = tela
 
@@ -169,14 +163,13 @@ class Menu:
             self.tela.blit(titulo, titulo.get_rect(center=(Config.LARGURA // 2, 150)))
 
             font2 = pygame.font.SysFont(None, 26)
-            texto = font2.render("Pressione ESPAÇO para jogar", True, Config.COR_OBJETOS)
+            texto = font2.render("Pressione ESPAÇO", True, Config.COR_OBJETOS)
             self.tela.blit(texto, texto.get_rect(center=(Config.LARGURA // 2, 350)))
 
             pygame.display.flip()
 
 
 def main():
-    """Função principal do sistema."""
     tela = pygame.display.set_mode((Config.LARGURA, Config.ALTURA))
     pygame.display.set_caption("Pong")
 
